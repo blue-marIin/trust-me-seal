@@ -1,0 +1,148 @@
+package main
+
+import (
+	"net"
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/x509"
+	"crypto/x509/pkix"
+	"encoding/json"
+	"encoding/pem"
+	"flag"
+	"fmt"
+	"os"
+	"time"
+	"software.sslmate.com/src/go-pkcs12"
+	"math/big"
+)
+
+const caConfigPath = "ca-config.json"
+const outputDir = "output"
+
+type CAConfig struct {
+	Country            string `json:"country"`
+	Organization       string `json:"organization"`
+	OrganizationalUnit string `json:"organizationalUnit"`
+	CommonName         string `json:"commonName"`
+	ValidForDays       int    `json:"validForDays"`
+}
+
+func main() {
+	dns := flag.String("dns", "", "DNS name for the certificate")
+	passphrase := flag.String("passphrase", "", "Passphrase to encrypt PKCS#12 files")
+	generateCA := flag.Bool("generate-ca", false, "Generate a self-signed CA")
+	outputPEM := flag.Bool("output-pem", false, "Also output certificate and key as .pem files")
+
+	flag.Parse()
+
+	if *dns == "" {
+		fmt.Println("You must provide --dns")
+		return
+	}
+
+	os.MkdirAll(outputDir, os.ModePerm)
+
+	var caCert *x509.Certificate
+	var caKey *rsa.PrivateKey
+
+	// Generate CA if generate-ca
+	if *generateCA {
+		var config CAConfig
+		configData, err := os.ReadFile(caConfigPath)
+		if err != nil {
+			panic(err)
+		}
+		if err := json.Unmarshal(configData, &config); err != nil {
+			panic(err)
+		}
+		caCert, caKey = generateSelfSignedCA(config, outputDir, *passphrase, *outputPEM)
+	}
+
+	// Generate end-entity cert (self-signed if no CA)
+	generateCertificate(*dns, outputDir, *passphrase, caCert, caKey, *outputPEM)
+}
+
+func generateSelfSignedCA(cfg CAConfig, outputDir, passphrase string, outputPEM bool) (*x509.Certificate, *rsa.PrivateKey) {
+	priv, _ := rsa.GenerateKey(rand.Reader, 4096)
+
+	template := x509.Certificate{
+		SerialNumber:          bigInt(),
+		Subject:               pkix.Name{Country: []string{cfg.Country}, Organization: []string{cfg.Organization}, OrganizationalUnit: []string{cfg.OrganizationalUnit}, CommonName: cfg.CommonName},
+		NotBefore:             time.Now(),
+		NotAfter:              time.Now().AddDate(0, 0, cfg.ValidForDays),
+		KeyUsage:              x509.KeyUsageCertSign | x509.KeyUsageCRLSign,
+		BasicConstraintsValid: true,
+		IsCA:                  true,
+	}
+
+	certDER, _ := x509.CreateCertificate(rand.Reader, &template, &template, &priv.PublicKey, priv)
+	cert, _ := x509.ParseCertificate(certDER)
+
+	// Save PKCS#12 CA
+	pfxData, _ := pkcs12.Encode(rand.Reader, priv, cert, nil, passphrase)
+	os.WriteFile(outputDir+"/ca_cert.p12", pfxData, 0600)
+
+	// Save PEM if output-pem
+	if outputPEM {
+		certOut, _ := os.Create(outputDir + "/ca_cert.pem")
+		pem.Encode(certOut, &pem.Block{Type: "CERTIFICATE", Bytes: cert.Raw})
+		certOut.Close()
+
+		keyOut, _ := os.Create(outputDir + "/ca_key.pem")
+		pem.Encode(keyOut, &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(priv)})
+		keyOut.Close()
+	}
+
+	return cert, priv
+}
+
+func generateCertificate(ipStr, outputDir, passphrase string, caCert *x509.Certificate, caKey *rsa.PrivateKey, outputPEM bool) {
+	priv, _ := rsa.GenerateKey(rand.Reader, 2048)
+
+	ip := net.ParseIP(ipStr)
+	if ip == nil {
+		fmt.Printf("Invalid IP address: %s\n", ipStr)
+		return
+	}
+
+	template := x509.Certificate{
+		SerialNumber: bigInt(),
+		Subject: pkix.Name{
+			CommonName: ipStr,
+		},
+		NotBefore:   time.Now(),
+		NotAfter:    time.Now().Add(365 * 24 * time.Hour),
+		IPAddresses: []net.IP{ip},
+		KeyUsage:    x509.KeyUsageDigitalSignature | x509.KeyUsageKeyEncipherment,
+		ExtKeyUsage: []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
+	}
+
+	var certDER []byte
+	if caCert != nil && caKey != nil {
+		certDER, _ = x509.CreateCertificate(rand.Reader, &template, caCert, &priv.PublicKey, caKey)
+	} else {
+		// if self-signed
+		certDER, _ = x509.CreateCertificate(rand.Reader, &template, &template, &priv.PublicKey, priv)
+	}
+
+	cert, _ := x509.ParseCertificate(certDER)
+
+	// Save PKCS#12
+	pfxData, _ := pkcs12.Encode(rand.Reader, priv, cert, nil, passphrase)
+	os.WriteFile(outputDir+"/cert.p12", pfxData, 0600)
+
+	if outputPEM {
+		certOut, _ := os.Create(outputDir + "/cert.pem")
+		pem.Encode(certOut, &pem.Block{Type: "CERTIFICATE", Bytes: cert.Raw})
+		certOut.Close()
+
+		keyOut, _ := os.Create(outputDir + "/key.key")
+		pem.Encode(keyOut, &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(priv)})
+		keyOut.Close()
+	}
+}
+
+func bigInt() *big.Int {
+	n, _ := rand.Int(rand.Reader, new(big.Int).Lsh(big.NewInt(1), 128))
+	return n
+}
