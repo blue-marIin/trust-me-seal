@@ -36,8 +36,13 @@ func main() {
 	flag.Parse()
 
 	if *dns == "" {
-		fmt.Println("You must provide --dns")
-		return
+		fmt.Println("You must provide --dns, eg: --dns 192.168.1.1")
+		os.Exit(1)
+	}
+
+	if *passphrase == "" {
+		fmt.Println("You must provide --passphrase, eg: --passphrase password123")
+		os.Exit(1)
 	}
 
 	os.MkdirAll(outputDir, os.ModePerm)
