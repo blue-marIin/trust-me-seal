@@ -30,13 +30,13 @@ type CAConfig struct {
 }
 
 func main() {
-	dns := flag.String("dns", "", "DNS name for the certificate")
+	ipValue := flag.String("ip", "", "Print server PC's IP address")
 	passphrase := flag.String("passphrase", "", "Passphrase to encrypt PKCS#12 files")
 
 	flag.Parse()
 
-	if (*dns == "" || *passphrase == "") {
-		fmt.Println("You must provide the IP address and passphrase.\neg: ./trustmeseal.exe --dns 192.168.1.1 --passphrase password123")
+	if (*ipValue == "" || *passphrase == "") {
+		fmt.Println("You must provide the IP address and passphrase.\neg: ./trustmeseal.exe --ip 192.168.1.1 --passphrase password123")
 		os.Exit(1)
 	}
 
@@ -56,7 +56,7 @@ func main() {
 	caCert, caKey = generateSelfSignedCA(config, outputDir, *passphrase)
 
 	// Generate local print server's cert
-	generateCertificate(*dns, outputDir, *passphrase, caCert, caKey)
+	generateCertificate(*ipValue, outputDir, *passphrase, caCert, caKey)
 }
 
 func generateSelfSignedCA(cfg CAConfig, outputDir, passphrase string) (*x509.Certificate, *rsa.PrivateKey) {
