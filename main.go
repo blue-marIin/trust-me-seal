@@ -30,8 +30,6 @@ type CAConfig struct {
 func main() {
 	dns := flag.String("dns", "", "DNS name for the certificate")
 	passphrase := flag.String("passphrase", "", "Passphrase to encrypt PKCS#12 files")
-	generateCA := flag.Bool("generate-ca", false, "Generate a self-signed CA")
-	outputPEM := flag.Bool("output-pem", false, "Also output certificate and key as .pem files")
 
 	flag.Parse()
 
@@ -50,24 +48,21 @@ func main() {
 	var caCert *x509.Certificate
 	var caKey *rsa.PrivateKey
 
-	// Generate CA if generate-ca
-	if *generateCA {
-		var config CAConfig
-		configData, err := os.ReadFile(caConfigPath)
-		if err != nil {
-			panic(err)
-		}
-		if err := json.Unmarshal(configData, &config); err != nil {
-			panic(err)
-		}
-		caCert, caKey = generateSelfSignedCA(config, outputDir, *passphrase, *outputPEM)
+	var config CAConfig
+	configData, err := os.ReadFile(caConfigPath)
+	if err != nil {
+		panic(err)
 	}
+	if err := json.Unmarshal(configData, &config); err != nil {
+		panic(err)
+	}
+	caCert, caKey = generateSelfSignedCA(config, outputDir, *passphrase)
 
-	// Generate end-entity cert (self-signed if no CA)
-	generateCertificate(*dns, outputDir, *passphrase, caCert, caKey, *outputPEM)
+	// Generate local print server's cert
+	generateCertificate(*dns, outputDir, *passphrase, caCert, caKey)
 }
 
-func generateSelfSignedCA(cfg CAConfig, outputDir, passphrase string, outputPEM bool) (*x509.Certificate, *rsa.PrivateKey) {
+func generateSelfSignedCA(cfg CAConfig, outputDir, passphrase string) (*x509.Certificate, *rsa.PrivateKey) {
 	priv, _ := rsa.GenerateKey(rand.Reader, 4096)
 
 	template := x509.Certificate{
@@ -87,21 +82,20 @@ func generateSelfSignedCA(cfg CAConfig, outputDir, passphrase string, outputPEM 
 	pfxData, _ := pkcs12.Encode(rand.Reader, priv, cert, nil, passphrase)
 	os.WriteFile(outputDir+"/ca_cert.p12", pfxData, 0600)
 
-	// Save PEM if output-pem
-	if outputPEM {
-		certOut, _ := os.Create(outputDir + "/ca_cert.pem")
-		pem.Encode(certOut, &pem.Block{Type: "CERTIFICATE", Bytes: cert.Raw})
-		certOut.Close()
+	certOut, _ := os.Create(outputDir + "/ca_cert.pem")
+	pem.Encode(certOut, &pem.Block{Type: "CERTIFICATE", Bytes: cert.Raw})
+	certOut.Close()
 
-		keyOut, _ := os.Create(outputDir + "/ca_key.pem")
-		pem.Encode(keyOut, &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(priv)})
-		keyOut.Close()
-	}
+	// CA's key not used in Clodop or for Windows certs
+	// keyOut, _ := os.Create(outputDir + "/ca_key.pem")
+	// pem.Encode(keyOut, &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(priv)})
+	// keyOut.Close()
+
 
 	return cert, priv
 }
 
-func generateCertificate(ipStr, outputDir, passphrase string, caCert *x509.Certificate, caKey *rsa.PrivateKey, outputPEM bool) {
+func generateCertificate(ipStr, outputDir, passphrase string, caCert *x509.Certificate, caKey *rsa.PrivateKey) {
 	priv, _ := rsa.GenerateKey(rand.Reader, 2048)
 
 	ip := net.ParseIP(ipStr)
@@ -136,15 +130,13 @@ func generateCertificate(ipStr, outputDir, passphrase string, caCert *x509.Certi
 	pfxData, _ := pkcs12.Encode(rand.Reader, priv, cert, nil, passphrase)
 	os.WriteFile(outputDir+"/cert.p12", pfxData, 0600)
 
-	if outputPEM {
-		certOut, _ := os.Create(outputDir + "/cert.pem")
-		pem.Encode(certOut, &pem.Block{Type: "CERTIFICATE", Bytes: cert.Raw})
-		certOut.Close()
+	certOut, _ := os.Create(outputDir + "/cert.pem")
+	pem.Encode(certOut, &pem.Block{Type: "CERTIFICATE", Bytes: cert.Raw})
+	certOut.Close()
 
-		keyOut, _ := os.Create(outputDir + "/key.key")
-		pem.Encode(keyOut, &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(priv)})
-		keyOut.Close()
-	}
+	keyOut, _ := os.Create(outputDir + "/key.key")
+	pem.Encode(keyOut, &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(priv)})
+	keyOut.Close()
 }
 
 func bigInt() *big.Int {
