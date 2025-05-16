@@ -79,9 +79,9 @@ func generateSelfSignedCA(cfg CAConfig, outputDir, passphrase string) (*x509.Cer
 
 	// Save PKCS#12 CA
 	pfxData, _ := pkcs12.Encode(rand.Reader, priv, cert, nil, passphrase)
-	os.WriteFile(outputDir+"/ca_cert.p12", pfxData, 0600)
+	os.WriteFile(outputDir+"/windows_trusted_root_ca.p12", pfxData, 0600)
 
-	certOut, _ := os.Create(outputDir + "/ca_cert.pem")
+	certOut, _ := os.Create(outputDir + "/printer_openssl_root_certfile.pem")
 	pem.Encode(certOut, &pem.Block{Type: "CERTIFICATE", Bytes: cert.Raw})
 	certOut.Close()
 
@@ -126,13 +126,13 @@ func generateCertificate(ipStr, outputDir, passphrase string, caCert *x509.Certi
 
 	// Save PKCS#12
 	pfxData, _ := pkcs12.Encode(rand.Reader, priv, cert, nil, passphrase)
-	os.WriteFile(outputDir+"/cert.p12", pfxData, 0600)
+	os.WriteFile(outputDir+"/windows_personal_certificate.p12", pfxData, 0600)
 
-	certOut, _ := os.Create(outputDir + "/cert.pem")
+	certOut, _ := os.Create(outputDir + "/printer_openssl_certfile.pem")
 	pem.Encode(certOut, &pem.Block{Type: "CERTIFICATE", Bytes: cert.Raw})
 	certOut.Close()
 
-	keyOut, _ := os.Create(outputDir + "/key.key")
+	keyOut, _ := os.Create(outputDir + "/printer_openssl_key_file.key")
 	pem.Encode(keyOut, &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(priv)})
 	keyOut.Close()
 }
