@@ -22,23 +22,23 @@ The browser may need to be restarted to see the effects.
 
 All the certificates _must_ be the same -- if you want to change the certificates (eg: if the printer host's IP changes), you'll have to go through the whole process again -- certificate generation and installation. As these certificates are meant to be single-use only, it is best practice that you delete the previous certificates when you generate new ones. [See 'Deleting certificates' below.]
 
-## ...on C-Lodop
+## ...on C-Lodop 🖨️
 
 Go into system tray, right click on C-Lodop icon. Hover over 'Extended', select SSL(https) Option...
 
 Navigate to the `output/printer` directory for each file and select the matching file. For the 'OpenSSL Key Password' field, type in the passphrase used at time of generating certificates.
 
-## ...on Windows hosts 
+## ...on Windows hosts 🪟
 
 There are 2 ways to do this.
 
-CLI via Windows' `certutil` (requires Administrator access):
+### CLI via Windows' `certutil` (requires Administrator access):
 
 `certutil -user -f -p "password123" -importpfx "output\personal_certificate.p12"`
 
 `certutil -user -f -p "password123" -importpfx "Root" "output\TRUSTED_ROOT.p12"`
 
-GUI:
+### GUI (does not require Administrator access):
 
 Navigate to the directory that `trustmeseal.exe` was run from, and go into `outputs/`. Double click to install `personal_certificate.p12`. When prompted for a password, enter the passphrase that was used for certificate generation. Leave everything else as default selections, and install.
 
