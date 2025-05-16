@@ -2,7 +2,7 @@
 
 Generate CA-signed certificates for an IP for use with C-Lodop local print servers.
 
-## How to run
+## How to run 🌊
 
 `./trustmeseal.exe --dns [IP] --passphrase [PASSWORD]`
 
@@ -12,17 +12,15 @@ Example:
 
 Both IP and passphrase are required. Please remember the passphrase used as you will need it when you install the certificates on Windows hosts. Make sure the IP is a _static_ IP that is being used by the PC running the C-Lodop print server.
 
-## Installing certificates
+## Installing certificates 🌊
 
 Certificates will need to be installed on all PCs that will run the key-in order page. The C-Lodop print server settings will also need to be updated.
 
 Once C-Lodop has been configured and the certificates have been installed, the browser may need to be restarted to see the effects.
 
-All the certificates _must_ be the same -- if you want to change the certificates (eg: if the printer host's IP changes), you'll have to go through the whole process again -- certificate generation and installation.
+All the certificates _must_ be the same -- if you want to change the certificates (eg: if the printer host's IP changes), you'll have to go through the whole process again -- certificate generation and installation. As these certificates are meant to be single-use only, it is best practice that you delete the previous certificates when you generate new ones. [See 'Deleting certificates' below.]
 
-As these certificates are meant to be single-use only, it is best practice that you delete the previous certificates when you generate new ones.
-
-### Installing certificates on Windows hosts
+### Installing certificates on Windows hosts 
 
 There are 2 ways to do this.
 

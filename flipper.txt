@@ -1,0 +1,4 @@
+certutil -user -f -p "yourPassphrase" -importpfx "your-certificate.pfx"
+certutil -user -f -p "yourPassphrase" -importpfx "Root" "CA-certificate.pfx"
+
+Imports certificates into current user's certificate store (root or personal).
