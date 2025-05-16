@@ -25,6 +25,8 @@ type CAConfig struct {
 	OrganizationalUnit string `json:"organizationalUnit"`
 	CommonName         string `json:"commonName"`
 	ValidForDays       int    `json:"validForDays"`
+	IsCA               bool   `json:"isCA"`
+	KeyUsageCertSign   bool   `json:"keyUsageCertSign"`
 }
 
 func main() {
@@ -70,7 +72,7 @@ func generateSelfSignedCA(cfg CAConfig, outputDir, passphrase string) (*x509.Cer
 		Subject:               pkix.Name{Country: []string{cfg.Country}, Organization: []string{cfg.Organization}, OrganizationalUnit: []string{cfg.OrganizationalUnit}, CommonName: cfg.CommonName},
 		NotBefore:             time.Now(),
 		NotAfter:              time.Now().AddDate(0, 0, cfg.ValidForDays),
-		KeyUsage:              x509.KeyUsageCertSign | x509.KeyUsageCRLSign,
+		KeyUsage:              x509.KeyUsageCertSign | x509.KeyUsageCRLSign | x509.KeyUsageDigitalSignature,
 		BasicConstraintsValid: true,
 		IsCA:                  true,
 	}
@@ -90,7 +92,6 @@ func generateSelfSignedCA(cfg CAConfig, outputDir, passphrase string) (*x509.Cer
 	// keyOut, _ := os.Create(outputDir + "/ca_key.pem")
 	// pem.Encode(keyOut, &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(priv)})
 	// keyOut.Close()
-
 
 	return cert, priv
 }

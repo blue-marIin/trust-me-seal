@@ -3,5 +3,7 @@
   "organization": "SEAL Certificates",
   "organizationalUnit": "IT",
   "commonName": "Trust Me",
-  "validForDays": 3650
+  "validForDays": 3650,
+  "isCA": true,
+  "keyUsageCertSign": true
 }
