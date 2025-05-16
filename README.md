@@ -12,15 +12,23 @@ Example:
 
 Both IP and passphrase are required. Please remember the passphrase used as you will need it when you install the certificates on Windows hosts. Make sure the IP is a _static_ IP that is being used by the PC running the C-Lodop print server.
 
-## Installing certificates 🌊
+## Installing certificates... 🌊
 
-Certificates will need to be installed on all PCs that will run the key-in order page. The C-Lodop print server settings will also need to be updated.
+To get it working, you'll need to:
+1. Set up C-Lodop to use OpenSSL
+2. Install certificates on every key-in PC, or every PC that uses the printer
 
-Once C-Lodop has been configured and the certificates have been installed, the browser may need to be restarted to see the effects.
+The browser may need to be restarted to see the effects.
 
 All the certificates _must_ be the same -- if you want to change the certificates (eg: if the printer host's IP changes), you'll have to go through the whole process again -- certificate generation and installation. As these certificates are meant to be single-use only, it is best practice that you delete the previous certificates when you generate new ones. [See 'Deleting certificates' below.]
 
-### Installing certificates on Windows hosts 
+## ...on C-Lodop
+
+Go into system tray, right click on C-Lodop icon. Hover over 'Extended', select SSL(https) Option...
+
+Navigate to the `output/printer` directory for each file and select the matching file. For the 'OpenSSL Key Password' field, type in the passphrase used at time of generating certificates.
+
+## ...on Windows hosts 
 
 There are 2 ways to do this.
 
@@ -35,12 +43,6 @@ GUI:
 Navigate to the directory that `trustmeseal.exe` was run from, and go into `outputs/`. Double click to install `personal_certificate.p12`. When prompted for a password, enter the passphrase that was used for certificate generation. Leave everything else as default selections, and install.
 
 Do the same for `TRUSTED_ROOT.p12`, however when selecting which certificate store, choose 'Place all certificates in the following store' and hit 'Browse'. Select 'Trusted Root Certification Authorities', then OK. Continue with the rest leaving default selections and install.
-
-### Setting up C-Lodop to use OpenSSL
-
-Go into system tray, right click on C-Lodop icon. Hover over 'Extended', select SSL(https) Option...
-
-Navigate to the `output/printer` directory for each file and select the matching file. For the 'OpenSSL Key Password' field, type in the passphrase used at time of generating certificates.
 
 ---
 
