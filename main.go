@@ -57,6 +57,8 @@ func main() {
 
 	// Generate local print server's cert
 	generateCertificate(*ipValue, outputDir, *passphrase, caCert, caKey)
+
+	fmt.Println("Finished generating certificates - please check the output folder.")
 }
 
 func generateSelfSignedCA(cfg CAConfig, outputDir, passphrase string) (*x509.Certificate, *rsa.PrivateKey) {
