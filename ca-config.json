@@ -1,8 +1,8 @@
 {
   "country": "AU",
-  "organization": "SEAL Certificates",
+  "organization": "Trust Me",
   "organizationalUnit": "IT",
-  "commonName": "Trust Me",
+  "commonName": "SEAL Certificates",
   "validForDays": 3650,
   "isCA": true,
   "keyUsageCertSign": true
