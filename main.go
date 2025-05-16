@@ -36,7 +36,7 @@ func main() {
 	flag.Parse()
 
 	if (*ipValue == "" || *passphrase == "") {
-		fmt.Println("You must provide the IP address and passphrase.\neg: ./trustmeseal.exe --ip 192.168.1.1 --passphrase password123")
+		fmt.Println("You must provide the IP address of the print server PC and a passphrase.\neg: ./trustmeseal.exe --ip 192.168.1.1 --passphrase password123")
 		os.Exit(1)
 	}
 
