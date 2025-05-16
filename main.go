@@ -85,7 +85,7 @@ func generateSelfSignedCA(cfg CAConfig, outputDir, passphrase string) (*x509.Cer
 	pem.Encode(certOut, &pem.Block{Type: "CERTIFICATE", Bytes: cert.Raw})
 	certOut.Close()
 
-	// CA's key not used in Clodop or for Windows certs
+	// Not outputting CA's private key - ephemeral CA cert, single-use only.
 	// keyOut, _ := os.Create(outputDir + "/ca_key.pem")
 	// pem.Encode(keyOut, &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(priv)})
 	// keyOut.Close()
@@ -117,9 +117,6 @@ func generateCertificate(ipStr, outputDir, passphrase string, caCert *x509.Certi
 	var certDER []byte
 	if caCert != nil && caKey != nil {
 		certDER, _ = x509.CreateCertificate(rand.Reader, &template, caCert, &priv.PublicKey, caKey)
-	} else {
-		// if self-signed
-		certDER, _ = x509.CreateCertificate(rand.Reader, &template, &template, &priv.PublicKey, priv)
 	}
 
 	cert, _ := x509.ParseCertificate(certDER)
