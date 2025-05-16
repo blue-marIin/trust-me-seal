@@ -28,7 +28,7 @@ Go into system tray, right click on C-Lodop icon. Hover over 'Extended', select 
 
 Navigate to the `output/printer` directory for each file and select the matching file. For the 'OpenSSL Key Password' field, type in the passphrase used at time of generating certificates.
 
-## ...on Windows hosts 🪟
+## ...on Windows hosts 🖥️
 
 There are 2 ways to do this.
 
@@ -46,11 +46,11 @@ Do the same for `TRUSTED_ROOT.p12`, however when selecting which certificate sto
 
 ---
 
-## Deleting certificates
+## Deleting certificates 🌊
 
 Further instructions coming soon 🦭
 
-## Assigning a static IP to the print server host
+## Assigning a static IP to the print server host 🌊
 
 Assuming that the router is using DHCP and that you don't have access to the router's console...
 
