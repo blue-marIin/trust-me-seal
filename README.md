@@ -32,13 +32,13 @@ Navigate to the `output/printer` directory for each file and select the matching
 
 There are 2 ways to do this.
 
-### CLI via Windows' `certutil` (requires Administrator access):
+### CLI via Windows' `certutil`:
 
 `certutil -user -f -p "password123" -importpfx "output\personal_certificate.p12"`
 
 `certutil -user -f -p "password123" -importpfx "Root" "output\TRUSTED_ROOT.p12"`
 
-### GUI (does not require Administrator access):
+### GUI via Windows' Certificate Import Wizard:
 
 Navigate to the directory that `trustmeseal.exe` was run from, and go into `outputs/`. Double click to install `personal_certificate.p12`. When prompted for a password, enter the passphrase that was used for certificate generation. Leave everything else as default selections, and install.
 
