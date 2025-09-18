@@ -20,10 +20,10 @@ jobs:
 
       - name: Build Windows binary 🔨
         run: |
-          GOOS=windows GOARCH=amd64 go build -o trust-me-seal-cli.exe main.go
+          GOOS=windows GOARCH=amd64 go build -o bin/trust-me-seal-cli.exe main.go
 
       - name: Upload binary artifact 💎
         uses: actions/upload-artifact@v4
         with:
           name: trust-me-seal-cli
-          path: ./bin/trust-me-seal-cli.exe
+          path: bin/trust-me-seal-cli.exe
