@@ -59,6 +59,8 @@ func main() {
 		panic(err)
 	}
 
+	// TODO: Do not pass outputDir to generateCert functions - handle output writing in main
+	// TODO: Get DNS and IP to work - separate params, IP optional?
 	caCert, caKey = generateSelfSignedCA(config, *outputDir, *passphrase, *exportRootPK)
 
 	// Generate local print server's cert
