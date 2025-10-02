@@ -33,6 +33,7 @@ func main() {
 	passphrase := flag.String("passphrase", "", "Passphrase to encrypt PKCS#12 files")
 	outputDir := flag.String("output", "output", "Output file path")
 	caConfig := flag.String("ca-config", "ca-config.json", "CA config JSON file location")
+	exportRootPK := flag.Bool("export-root-pk", false, "Export CA private key")
 
 	flag.Parse()
 
@@ -58,7 +59,7 @@ func main() {
 		panic(err)
 	}
 
-	caCert, caKey = generateSelfSignedCA(config, *outputDir, *passphrase)
+	caCert, caKey = generateSelfSignedCA(config, *outputDir, *passphrase, *exportRootPK)
 
 	// Generate local print server's cert
 	generateCertificate(*ipValue, *outputDir, *passphrase, caCert, caKey)
@@ -66,7 +67,7 @@ func main() {
 	fmt.Println("Finished generating certificates - please check the output folder.")
 }
 
-func generateSelfSignedCA(cfg CAConfig, outputDir, passphrase string) (*x509.Certificate, *rsa.PrivateKey) {
+func generateSelfSignedCA(cfg CAConfig, outputDir string, passphrase string, exportRootPK bool) (*x509.Certificate, *rsa.PrivateKey) {
 	priv, _ := rsa.GenerateKey(rand.Reader, 4096)
 
 	template := x509.Certificate{
@@ -90,10 +91,12 @@ func generateSelfSignedCA(cfg CAConfig, outputDir, passphrase string) (*x509.Cer
 	pem.Encode(certOut, &pem.Block{Type: "CERTIFICATE", Bytes: cert.Raw})
 	certOut.Close()
 
-	// Not outputting CA's private key - ephemeral CA cert, single-use only.
-	// keyOut, _ := os.Create(outputDir + "/ca_key.pem")
-	// pem.Encode(keyOut, &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(priv)})
-	// keyOut.Close()
+	// Not outputting CA's private key by default - intended ephemeral/single-use CA cert
+	if exportRootPK == true {
+		keyOut, _ := os.Create(outputDir + "/ca_key.pem")
+		pem.Encode(keyOut, &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(priv)})
+		keyOut.Close()
+	}
 
 	return cert, priv
 }
