@@ -29,7 +29,7 @@ type CAConfig struct {
 }
 
 func main() {
-	ipValue := flag.String("dns", "", "Print server's address")
+	printerDns := flag.String("dns", "", "Print server's address")
 	passphrase := flag.String("passphrase", "", "Passphrase to encrypt PKCS#12 files")
 	outputDir := flag.String("output", "output", "Output file path")
 	caConfig := flag.String("ca-config", "ca-config.json", "CA config JSON file location")
@@ -37,7 +37,7 @@ func main() {
 
 	flag.Parse()
 
-	if *ipValue == "" || *passphrase == "" {
+	if *printerDns == "" || *passphrase == "" {
 		fmt.Println("You must provide the DNS of the print server PC and a passphrase.\neg: ./trust-me-seal-cli.exe --dns printserver.local --passphrase changeit")
 		os.Exit(1)
 	}
@@ -62,7 +62,7 @@ func main() {
 	caCert, caKey = generateSelfSignedCA(config, *outputDir, *passphrase, *exportRootPK)
 
 	// Generate local print server's cert
-	generateCertificate(*ipValue, *outputDir, *passphrase, caCert, caKey)
+	generateCertificate(*printerDns, *outputDir, *passphrase, caCert, caKey)
 
 	fmt.Println("Finished generating certificates - please check the output folder.")
 }
