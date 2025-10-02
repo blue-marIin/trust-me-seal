@@ -9,6 +9,7 @@ import (
 	"encoding/pem"
 	"flag"
 	"fmt"
+	"log"
 	"math/big"
 	"net"
 	"os"
@@ -16,9 +17,6 @@ import (
 
 	"software.sslmate.com/src/go-pkcs12"
 )
-
-const caConfigPath = "ca-config.json"
-const outputDir = "output"
 
 type CAConfig struct {
 	Country            string `json:"country"`
@@ -33,6 +31,8 @@ type CAConfig struct {
 func main() {
 	ipValue := flag.String("dns", "", "Print server's address")
 	passphrase := flag.String("passphrase", "", "Passphrase to encrypt PKCS#12 files")
+	outputDir := flag.String("output", "output", "Output file path")
+	caConfig := flag.String("ca-config", "ca-config.json", "CA config JSON file location")
 
 	flag.Parse()
 
@@ -41,13 +41,16 @@ func main() {
 		os.Exit(1)
 	}
 
-	os.MkdirAll(outputDir, os.ModePerm)
+	err := os.MkdirAll(*outputDir, os.ModePerm)
+	if err != nil {
+		log.Fatalf("Failed to create directory: %v", err)
+	}
 
 	var caCert *x509.Certificate
 	var caKey *rsa.PrivateKey
 
 	var config CAConfig
-	configData, err := os.ReadFile(caConfigPath)
+	configData, err := os.ReadFile(*caConfig)
 	if err != nil {
 		panic(err)
 	}
@@ -55,10 +58,10 @@ func main() {
 		panic(err)
 	}
 
-	caCert, caKey = generateSelfSignedCA(config, outputDir, *passphrase)
+	caCert, caKey = generateSelfSignedCA(config, *outputDir, *passphrase)
 
 	// Generate local print server's cert
-	generateCertificate(*ipValue, outputDir, *passphrase, caCert, caKey)
+	generateCertificate(*ipValue, *outputDir, *passphrase, caCert, caKey)
 
 	fmt.Println("Finished generating certificates - please check the output folder.")
 }
@@ -83,7 +86,7 @@ func generateSelfSignedCA(cfg CAConfig, outputDir, passphrase string) (*x509.Cer
 	pfxData, _ := pkcs12.Modern.Encode(priv, cert, nil, passphrase)
 	os.WriteFile(outputDir+"/TRUSTED_ROOT.p12", pfxData, 0600)
 
-	certOut, _ := os.Create(outputDir + "/printer/openssl_root_certfile.pem")
+	certOut, _ := os.Create(outputDir + "/openssl_root_certfile.pem")
 	pem.Encode(certOut, &pem.Block{Type: "CERTIFICATE", Bytes: cert.Raw})
 	certOut.Close()
 
@@ -127,11 +130,11 @@ func generateCertificate(ipStr, outputDir, passphrase string, caCert *x509.Certi
 	pfxData, _ := pkcs12.Modern.Encode(priv, cert, nil, passphrase)
 	os.WriteFile(outputDir+"/personal_certificate.p12", pfxData, 0600)
 
-	certOut, _ := os.Create(outputDir + "/printer/openssl_certfile.pem")
+	certOut, _ := os.Create(outputDir + "/openssl_certfile.pem")
 	pem.Encode(certOut, &pem.Block{Type: "CERTIFICATE", Bytes: cert.Raw})
 	certOut.Close()
 
-	keyOut, _ := os.Create(outputDir + "/printer/openssl_key_file.key")
+	keyOut, _ := os.Create(outputDir + "/openssl_key_file.key")
 	pem.Encode(keyOut, &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(priv)})
 	keyOut.Close()
 }
