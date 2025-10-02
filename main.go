@@ -79,7 +79,7 @@ func generateSelfSignedCA(cfg CAConfig, outputDir, passphrase string) (*x509.Cer
 	cert, _ := x509.ParseCertificate(certDER)
 
 	// Save PKCS#12 CA
-	pfxData, _ := pkcs12.Encode(rand.Reader, priv, cert, nil, passphrase)
+	pfxData, _ := pkcs12.Modern.Encode(priv, cert, nil, passphrase)
 	os.WriteFile(outputDir+"/TRUSTED_ROOT.p12", pfxData, 0600)
 
 	certOut, _ := os.Create(outputDir + "/printer/openssl_root_certfile.pem")
@@ -123,7 +123,7 @@ func generateCertificate(ipStr, outputDir, passphrase string, caCert *x509.Certi
 	cert, _ := x509.ParseCertificate(certDER)
 
 	// Save PKCS#12
-	pfxData, _ := pkcs12.Encode(rand.Reader, priv, cert, nil, passphrase)
+	pfxData, _ := pkcs12.Modern.Encode(priv, cert, nil, passphrase)
 	os.WriteFile(outputDir+"/personal_certificate.p12", pfxData, 0600)
 
 	certOut, _ := os.Create(outputDir + "/printer/openssl_certfile.pem")
