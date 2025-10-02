@@ -1,7 +1,6 @@
 package main
 
 import (
-	"net"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
@@ -10,10 +9,12 @@ import (
 	"encoding/pem"
 	"flag"
 	"fmt"
+	"math/big"
+	"net"
 	"os"
 	"time"
+
 	"software.sslmate.com/src/go-pkcs12"
-	"math/big"
 )
 
 const caConfigPath = "ca-config.json"
@@ -35,7 +36,7 @@ func main() {
 
 	flag.Parse()
 
-	if (*ipValue == "" || *passphrase == "") {
+	if *ipValue == "" || *passphrase == "" {
 		fmt.Println("You must provide the IP address of the print server PC and a passphrase.\neg: ./trustmeseal.exe --ip 192.168.1.1 --passphrase password123")
 		os.Exit(1)
 	}
