@@ -92,7 +92,7 @@ func generateSelfSignedCA(cfg CAConfig, outputDir string, passphrase string, exp
 	certOut.Close()
 
 	// Not outputting CA's private key by default - intended ephemeral/single-use CA cert
-	if exportRootPK == true {
+	if exportRootPK {
 		keyOut, _ := os.Create(outputDir + "/ca_key.pem")
 		pem.Encode(keyOut, &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(priv)})
 		keyOut.Close()
