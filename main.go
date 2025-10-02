@@ -37,7 +37,7 @@ func main() {
 	flag.Parse()
 
 	if *ipValue == "" || *passphrase == "" {
-		fmt.Println("You must provide the DNS of the print server PC and a passphrase.\neg: ./trustmeseal.exe --dns printserver.local --passphrase changeit")
+		fmt.Println("You must provide the DNS of the print server PC and a passphrase.\neg: ./trust-me-seal-cli.exe --dns printserver.local --passphrase changeit")
 		os.Exit(1)
 	}
 
