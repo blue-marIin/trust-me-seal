@@ -101,7 +101,7 @@ func generateSelfSignedCA(cfg CAConfig, outputDir string, passphrase string, exp
 	return cert, priv
 }
 
-func generateCertificate(ipStr, outputDir, passphrase string, caCert *x509.Certificate, caKey *rsa.PrivateKey) {
+func generateCertificate(ipStr string, outputDir string, passphrase string, caCert *x509.Certificate, caKey *rsa.PrivateKey) {
 	priv, _ := rsa.GenerateKey(rand.Reader, 2048)
 
 	ip := net.ParseIP(ipStr)
