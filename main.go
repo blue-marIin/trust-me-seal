@@ -29,7 +29,7 @@ type CAConfig struct {
 }
 
 func main() {
-	printerDns := flag.String("dns", "", "Print server's address")
+	printerDns := flag.String("dns", "", "Print server's hostname")
 	passphrase := flag.String("passphrase", "", "Passphrase to encrypt PKCS#12 files")
 	outputDir := flag.String("output", "output", "Output file path")
 	caConfig := flag.String("ca-config", "ca-config.json", "CA config JSON file location")
@@ -47,7 +47,7 @@ func main() {
 		log.Fatalf("Failed to create directory: %v", err)
 	}
 
-	var caCert *x509.Certificate
+	var caCert *x509.Certificate // See https://pkg.go.dev/crypto/x509#Certificate
 	var caKey *rsa.PrivateKey
 
 	var config CAConfig
@@ -115,7 +115,7 @@ func generateCertificate(ipStr string, outputDir string, passphrase string, caCe
 	template := x509.Certificate{
 		SerialNumber: bigInt(),
 		Subject: pkix.Name{
-			CommonName: ipStr,
+			CommonName: ipStr, // deprecated
 		},
 		NotBefore:   time.Now(),
 		NotAfter:    time.Now().Add(365 * 24 * time.Hour),
