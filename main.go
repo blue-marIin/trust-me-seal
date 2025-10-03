@@ -58,7 +58,7 @@ func main() {
 		log.Fatalf("Failed to create directory: %v", err)
 	}
 
-	loadConfig(*caConfigPath)
+	config, err := loadConfig(*caConfigPath)
 	if err != nil {
 		log.Fatalf("Failed to load CA config JSON file: %v", err)
 	}
