@@ -67,11 +67,11 @@ func main() {
 	// TODO: Do not pass outputDir to generateCert functions - handle output writing in main
 	// 	^ Unsure of whether this is a good idea anymore
 	// TODO: Get DNS and IP to work - separate params, IP optional?
-	caCert, caKey, caPfxData, err := generateSelfSignedCA(config, *passphrase)
+	caCert, caKey, caPfxData, err := generateCACertificate(config, *passphrase)
 	if err != nil {
 		log.Fatalf("Failed to generate CA certificate and private key: %v", err)
 	}
-	generateCertificate(*printerDns, *outputDir, *passphrase, caCert, caKey)
+	generateServerCertificate(*printerDns, *outputDir, *passphrase, caCert, caKey)
 	// TODO: Need to figure out how to use exportRootPK
 	// Possibly split writeOutputCertificates into writeOutputPK12, writeOutputPEM, writeOutputPrivateKey?
 	writeOutputCertificates(*outputDir, "root", caPfxData)
@@ -95,7 +95,7 @@ func loadConfig(caConfigPath string) (CAConfig, error) {
 	return config, err
 }
 
-func generateSelfSignedCA(cfg CAConfig, passphrase string) (*x509.Certificate, *rsa.PrivateKey, []byte, error) {
+func generateCACertificate(cfg CAConfig, passphrase string) (*x509.Certificate, *rsa.PrivateKey, []byte, error) {
 	priv, _ := rsa.GenerateKey(rand.Reader, 4096)
 
 	template := x509.Certificate{
@@ -131,7 +131,7 @@ func generateSelfSignedCA(cfg CAConfig, passphrase string) (*x509.Certificate, *
 	return cert, priv, caPfxData, err
 }
 
-func generateCertificate(ipStr string, outputDir string, passphrase string, caCert *x509.Certificate, caKey *rsa.PrivateKey) {
+func generateServerCertificate(ipStr string, outputDir string, passphrase string, caCert *x509.Certificate, caKey *rsa.PrivateKey) {
 	priv, _ := rsa.GenerateKey(rand.Reader, 4096)
 
 	ip := net.ParseIP(ipStr)
