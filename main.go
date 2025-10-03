@@ -34,7 +34,7 @@ func main() {
 	printerDns := flag.String("dns", "", "Print server's hostname")
 	passphrase := flag.String("passphrase", "", "Passphrase to encrypt PKCS#12 files")
 	outputDir := flag.String("output", "output", "Output file path")
-	caConfig := flag.String("ca-config", "ca-config.json", "CA config JSON file location")
+	caConfigPath := flag.String("ca-config", "ca-config.json", "CA config JSON file location")
 	//exportRootPK := flag.Bool("export-root-pk", false, "Export CA private key")
 
 	flag.Parse()
@@ -51,7 +51,7 @@ func main() {
 
 	// Put loading config into its own function?
 	var config CAConfig
-	configData, err := os.ReadFile(*caConfig)
+	configData, err := os.ReadFile(*caConfigPath)
 	if err != nil {
 		panic(err)
 	}
@@ -91,6 +91,9 @@ func generateSelfSignedCA(cfg CAConfig, passphrase string) (*x509.Certificate, *
 
 	// Save PKCS#12 CA
 	caPfxData, err := pkcs12.Modern.Encode(priv, cert, nil, passphrase)
+	if err != nil {
+		panic(err)
+	}
 	//os.WriteFile(outputDir+"/TRUSTED_ROOT.p12", pfxData, 0600)
 
 	//certOut, _ := os.Create(outputDir + "/openssl_root_certfile.pem")
