@@ -13,6 +13,7 @@ import (
 	"math/big"
 	"net"
 	"os"
+	"path/filepath"
 	"time"
 
 	"software.sslmate.com/src/go-pkcs12"
@@ -37,7 +38,7 @@ const serverPrivateKeyFilename = "openssl_key_file.key" // |
 // MAYBE: Add --dry-run flag for preview without writing output
 // MAYBE: Add --valid-for flag to change validity period
 
-const clodopOutputDir = "/clodop" // May change this to a more generic name
+const clodopOutputDir = "clodop" // May change this to a more generic name
 
 func main() {
 	var err error
@@ -63,6 +64,9 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to load CA config JSON file: %v", err)
 	}
+
+	outputPath := filepath.Join(*outputDir, clodopOutputDir)
+	os.MkdirAll(outputPath, os.ModePerm)
 
 	// TODO: Do not pass outputDir to generateCert functions - handle output writing in main
 	// 	^ Unsure of whether this is a good idea anymore
