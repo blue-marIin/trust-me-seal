@@ -38,8 +38,6 @@ const serverPrivateKeyFilename = "openssl_key_file.key" // |
 // MAYBE: Add --dry-run flag for preview without writing output
 // MAYBE: Add --valid-for flag to change validity period
 
-const clodopOutputDir = "clodop" // May change this to a more generic name
-
 func main() {
 	var err error
 
@@ -47,9 +45,11 @@ func main() {
 	passphrase := flag.String("passphrase", "", "Passphrase to encrypt PKCS#12 files")
 	outputDir := flag.String("output", "output", "Output file path")
 	caConfigPath := flag.String("ca-config", "ca-config.json", "CA config JSON file location")
-	//exportRootPK := flag.Bool("export-root-pk", false, "Export CA private key")
+	exportCAPK := flag.Bool("export-ca-pk", false, "Export CA private key")
 
 	flag.Parse()
+
+	var clodopOutputDir = filepath.Join(*outputDir, "clodop") // May change this to a more generic name
 
 	if *printerDns == "" || *passphrase == "" {
 		log.Fatalf("You must provide the DNS of the print server PC and a passphrase.\neg: ./trust-me-seal-cli.exe --dns printserver.local --passphrase changeit")
@@ -75,10 +75,9 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to generate CA certificate and private key: %v", err)
 	}
+	writeCAOutput(outputPath, caPfxData, *exportCAPK)
+
 	generateServerCertificate(*printerDns, *outputDir, *passphrase, caCert, caKey)
-	// TODO: Need to figure out how to use exportRootPK
-	// Possibly split writeOutputCertificates into writeOutputPK12, writeOutputPEM, writeOutputPrivateKey?
-	writeOutputCertificates(*outputDir, "root", caPfxData)
 
 	fmt.Println("Finished generating certificates - please check the output folder.")
 }
@@ -100,7 +99,10 @@ func loadConfig(caConfigPath string) (CAConfig, error) {
 }
 
 func generateCACertificate(cfg CAConfig, passphrase string) (*x509.Certificate, *rsa.PrivateKey, []byte, error) {
-	priv, _ := rsa.GenerateKey(rand.Reader, 4096)
+	priv, err := rsa.GenerateKey(rand.Reader, 4096)
+	if err != nil {
+		return nil, nil, nil, fmt.Errorf("failed to generate CA private key: %w", err)
+	}
 
 	template := x509.Certificate{
 		SerialNumber:          bigInt(),
@@ -135,8 +137,11 @@ func generateCACertificate(cfg CAConfig, passphrase string) (*x509.Certificate, 
 	return cert, priv, caPfxData, err
 }
 
-func generateServerCertificate(ipStr string, outputDir string, passphrase string, caCert *x509.Certificate, caKey *rsa.PrivateKey) {
-	priv, _ := rsa.GenerateKey(rand.Reader, 4096)
+func generateServerCertificate(ipStr string, outputDir string, passphrase string, caCert *x509.Certificate, caKey *rsa.PrivateKey) error {
+	priv, err := rsa.GenerateKey(rand.Reader, 4096)
+	if err != nil {
+		return fmt.Errorf("failed to generate server private key: %w", err)
+	}
 
 	ip := net.ParseIP(ipStr)
 	if ip == nil {
@@ -172,6 +177,8 @@ func generateServerCertificate(ipStr string, outputDir string, passphrase string
 	keyOut, _ := os.Create(outputDir + serverPrivateKeyFilename)
 	pem.Encode(keyOut, &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(priv)})
 	keyOut.Close()
+
+	return nil
 }
 
 func bigInt() *big.Int {
@@ -179,9 +186,29 @@ func bigInt() *big.Int {
 	return n
 }
 
-func writeOutputCertificates(outputDir string, certType string, pfxData []byte) error {
+func writeCAOutput(outputPath string, pfxData []byte, exportKey bool) error {
 	var err error
 
-	os.WriteFile(outputDir)
-	return err
+	err = os.WriteFile(outputPath, pfxData, 0600)
+	if err != nil {
+		log.Fatalf("Failed to write CA PKCS12 file: %v", err)
+	}
+
+	certOut, err := os.Create(filepath.Join(outputPath, caPEMFilename))
+	if err != nil {
+		return fmt.Errorf("failed to create CA PEM file: %w", err)
+	}
+	defer certOut.Close()
+	pem.Encode(certOut, &pem.Block{Type: "CERTIFICATE", Bytes: cert.Raw})
+
+	if exportKey {
+		keyOut, err := os.Create(filepath.Join(outputPath, caPrivateKeyFilename))
+		if err != nil {
+			return fmt.Errorf("failed to write CA private key: %w", err)
+		}
+		defer keyOut.Close()
+		pem.Encode(keyOut, &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(priv)})
+	}
+
+	return nil
 }
