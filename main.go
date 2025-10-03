@@ -28,6 +28,15 @@ type CAConfig struct {
 	KeyUsageCertSign   bool   `json:"keyUsageCertSign"`
 }
 
+const caPK12Filename = "TRUSTED_ROOT.p12"
+const caPEMFilename = "openssl_root_certfile.pem"
+const caPrivateKeyFilename = "root.key"
+const serverPK12Filename = "personal_certificate.p12"   // |
+const serverPEMFilename = "openssl_certfile.pem"        // |- Names are derived from C-Lodop naming
+const serverPrivateKeyFilename = "openssl_key_file.key" // |
+
+const clodopOutputDir = "/clodop" // May change this to a more generic name
+
 func main() {
 	var err error
 
@@ -44,7 +53,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	err = os.MkdirAll(*outputDir, os.ModePerm)
+	err = os.MkdirAll(*outputDir+clodopOutputDir, os.ModePerm)
 	if err != nil {
 		log.Fatalf("Failed to create directory: %v", err)
 	}
@@ -140,13 +149,13 @@ func generateCertificate(ipStr string, outputDir string, passphrase string, caCe
 
 	// Save PKCS#12
 	pfxData, _ := pkcs12.Modern.Encode(priv, cert, nil, passphrase)
-	os.WriteFile(outputDir+"/personal_certificate.p12", pfxData, 0600)
+	os.WriteFile(outputDir+serverPK12Filename, pfxData, 0600)
 
-	certOut, _ := os.Create(outputDir + "/openssl_certfile.pem")
+	certOut, _ := os.Create(outputDir + serverPEMFilename)
 	pem.Encode(certOut, &pem.Block{Type: "CERTIFICATE", Bytes: cert.Raw})
 	certOut.Close()
 
-	keyOut, _ := os.Create(outputDir + "/openssl_key_file.key")
+	keyOut, _ := os.Create(outputDir + serverPrivateKeyFilename)
 	pem.Encode(keyOut, &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(priv)})
 	keyOut.Close()
 }
