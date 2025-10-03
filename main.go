@@ -63,15 +63,16 @@ func main() {
 	}
 
 	// TODO: Do not pass outputDir to generateCert functions - handle output writing in main
+	// 	^ Unsure of whether this is a good idea anymore
 	// TODO: Get DNS and IP to work - separate params, IP optional?
 	caCert, caKey, caPfxData, err := generateSelfSignedCA(config, *passphrase)
 	if err != nil {
 		panic(err)
 	}
-	// TODO: Need to figure out how to use exportRootPK
-	writeOutputCertificates(*outputDir, "root", caPfxData)
-	// Generate local print server's cert
 	generateCertificate(*printerDns, *outputDir, *passphrase, caCert, caKey)
+	// TODO: Need to figure out how to use exportRootPK
+	// Possibly split writeOutputCertificates into writeOutputPK12, writeOutputPEM, writeOutputPrivateKey?
+	writeOutputCertificates(*outputDir, "root", caPfxData)
 
 	fmt.Println("Finished generating certificates - please check the output folder.")
 }
@@ -108,7 +109,6 @@ func generateSelfSignedCA(cfg CAConfig, passphrase string) (*x509.Certificate, *
 	certDER, _ := x509.CreateCertificate(rand.Reader, &template, &template, &priv.PublicKey, priv)
 	cert, _ := x509.ParseCertificate(certDER)
 
-	// Save PKCS#12 CA
 	caPfxData, err := pkcs12.Modern.Encode(priv, cert, nil, passphrase)
 	if err != nil {
 		panic(err)
@@ -156,7 +156,6 @@ func generateCertificate(ipStr string, outputDir string, passphrase string, caCe
 
 	cert, _ := x509.ParseCertificate(certDER)
 
-	// Save PKCS#12
 	pfxData, _ := pkcs12.Modern.Encode(priv, cert, nil, passphrase)
 	os.WriteFile(outputDir+serverPK12Filename, pfxData, 0600)
 
