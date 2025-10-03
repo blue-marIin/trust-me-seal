@@ -58,14 +58,9 @@ func main() {
 		log.Fatalf("Failed to create directory: %v", err)
 	}
 
-	// Put loading config into its own function?
-	var config CAConfig
-	configData, err := os.ReadFile(*caConfigPath)
+	loadConfig(*caConfigPath)
 	if err != nil {
-		panic(err)
-	}
-	if err := json.Unmarshal(configData, &config); err != nil {
-		panic(err)
+		log.Fatalf("Failed to load CA config JSON file: %v", err)
 	}
 
 	// TODO: Do not pass outputDir to generateCert functions - handle output writing in main
@@ -75,11 +70,27 @@ func main() {
 		panic(err)
 	}
 	// TODO: Need to figure out how to use exportRootPK
-	writeOutputCertificates(*outputDir, caPfxData)
+	writeOutputCertificates(*outputDir, "ca", caPfxData)
 	// Generate local print server's cert
 	generateCertificate(*printerDns, *outputDir, *passphrase, caCert, caKey)
 
 	fmt.Println("Finished generating certificates - please check the output folder.")
+}
+
+func loadConfig(caConfigPath string) (CAConfig, error) {
+	var config CAConfig
+	var err error
+
+	configData, err := os.ReadFile(caConfigPath)
+	if err != nil {
+		panic(err)
+	}
+
+	if err := json.Unmarshal(configData, &config); err != nil {
+		panic(err)
+	}
+
+	return config, err
 }
 
 func generateSelfSignedCA(cfg CAConfig, passphrase string) (*x509.Certificate, *rsa.PrivateKey, []byte, error) {
@@ -165,7 +176,9 @@ func bigInt() *big.Int {
 	return n
 }
 
-func writeOutputCertificates(outputDir string, pfxData []byte) error {
+func writeOutputCertificates(outputDir string, certType string, pfxData []byte) error {
 	var err error
+
+	os.WriteFile(outputDir)
 	return err
 }
