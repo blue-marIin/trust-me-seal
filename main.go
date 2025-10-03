@@ -35,8 +35,8 @@ const caPrivateKeyFilename = "root.key"
 const serverPK12Filename = "personal_certificate.p12"   // |
 const serverPEMFilename = "openssl_certfile.pem"        // |- Names are derived from C-Lodop naming
 const serverPrivateKeyFilename = "openssl_key_file.key" // |
-// MAYBE: Add --dry-run flag for preview without writing output
-// MAYBE: Add --valid-for flag to change validity period
+
+const serverOutputDir = "clodop" // May change this to a more generic name
 
 func main() {
 	var err error
@@ -46,16 +46,17 @@ func main() {
 	outputDir := flag.String("output", "output", "Output file path")
 	caConfigPath := flag.String("ca-config", "ca-config.json", "CA config JSON file location")
 	exportCAPK := flag.Bool("export-ca-pk", false, "Export CA private key")
+	// MAYBE: Add --dry-run flag for preview without writing output
+	// MAYBE: Add --valid-for flag to change validity period
 
 	flag.Parse()
-
-	var clodopOutputDir = filepath.Join(*outputDir, "clodop") // May change this to a more generic name
 
 	if *printerDns == "" || *passphrase == "" {
 		log.Fatalf("You must provide the DNS of the print server PC and a passphrase.\neg: ./trust-me-seal-cli.exe --dns printserver.local --passphrase changeit")
 	}
 
-	err = os.MkdirAll(*outputDir+clodopOutputDir, os.ModePerm)
+	var fullOutputPath = filepath.Join(*outputDir, serverOutputDir)
+	err = os.MkdirAll(fullOutputPath, os.ModePerm)
 	if err != nil {
 		log.Fatalf("Failed to create directory: %v", err)
 	}
@@ -65,9 +66,6 @@ func main() {
 		log.Fatalf("Failed to load CA config JSON file: %v", err)
 	}
 
-	outputPath := filepath.Join(*outputDir, clodopOutputDir)
-	os.MkdirAll(outputPath, os.ModePerm)
-
 	// TODO: Do not pass outputDir to generateCert functions - handle output writing in main
 	// 	^ Unsure of whether this is a good idea anymore
 	// TODO: Get DNS and IP to work - separate params, IP optional?
@@ -75,7 +73,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to generate CA certificate and private key: %v", err)
 	}
-	writeCAOutput(outputPath, caPfxData, *exportCAPK)
+	writeCAOutput(fullOutputPath, caPfxData, *exportCAPK)
 
 	generateServerCertificate(*printerDns, *outputDir, *passphrase, caCert, caKey)
 
