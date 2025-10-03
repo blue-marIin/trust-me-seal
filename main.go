@@ -34,6 +34,8 @@ const caPrivateKeyFilename = "root.key"
 const serverPK12Filename = "personal_certificate.p12"   // |
 const serverPEMFilename = "openssl_certfile.pem"        // |- Names are derived from C-Lodop naming
 const serverPrivateKeyFilename = "openssl_key_file.key" // |
+// MAYBE: Add --dry-run flag for preview without writing output
+// MAYBE: Add --valid-for flag to change validity period
 
 const clodopOutputDir = "/clodop" // May change this to a more generic name
 
@@ -67,7 +69,7 @@ func main() {
 	// TODO: Get DNS and IP to work - separate params, IP optional?
 	caCert, caKey, caPfxData, err := generateSelfSignedCA(config, *passphrase)
 	if err != nil {
-		panic(err)
+		log.Fatalf("Failed to generate CA certificate and private key: %v", err)
 	}
 	generateCertificate(*printerDns, *outputDir, *passphrase, caCert, caKey)
 	// TODO: Need to figure out how to use exportRootPK
@@ -83,11 +85,11 @@ func loadConfig(caConfigPath string) (CAConfig, error) {
 
 	configData, err := os.ReadFile(caConfigPath)
 	if err != nil {
-		panic(err)
+		log.Fatalf("Failed to load CA config file: %v", err)
 	}
 
 	if err := json.Unmarshal(configData, &config); err != nil {
-		panic(err)
+		log.Fatalf("Failed to parse CA config JSON: %v", err)
 	}
 
 	return config, err
@@ -111,7 +113,7 @@ func generateSelfSignedCA(cfg CAConfig, passphrase string) (*x509.Certificate, *
 
 	caPfxData, err := pkcs12.Modern.Encode(priv, cert, nil, passphrase)
 	if err != nil {
-		panic(err)
+		log.Fatalf("Failed to encode PKCS12 data: %v", err)
 	}
 	//os.WriteFile(outputDir+"/TRUSTED_ROOT.p12", pfxData, 0600)
 
