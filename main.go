@@ -49,8 +49,7 @@ func main() {
 	flag.Parse()
 
 	if *printerDns == "" || *passphrase == "" {
-		fmt.Println("You must provide the DNS of the print server PC and a passphrase.\neg: ./trust-me-seal-cli.exe --dns printserver.local --passphrase changeit")
-		os.Exit(1)
+		log.Fatalf("You must provide the DNS of the print server PC and a passphrase.\neg: ./trust-me-seal-cli.exe --dns printserver.local --passphrase changeit")
 	}
 
 	err = os.MkdirAll(*outputDir+clodopOutputDir, os.ModePerm)
@@ -70,7 +69,7 @@ func main() {
 		panic(err)
 	}
 	// TODO: Need to figure out how to use exportRootPK
-	writeOutputCertificates(*outputDir, "ca", caPfxData)
+	writeOutputCertificates(*outputDir, "root", caPfxData)
 	// Generate local print server's cert
 	generateCertificate(*printerDns, *outputDir, *passphrase, caCert, caKey)
 
@@ -135,8 +134,7 @@ func generateCertificate(ipStr string, outputDir string, passphrase string, caCe
 
 	ip := net.ParseIP(ipStr)
 	if ip == nil {
-		fmt.Printf("Invalid IP address: %s\n", ipStr)
-		return
+		log.Fatalf("Invalid IP address: %s\n", ipStr)
 	}
 
 	template := x509.Certificate{
