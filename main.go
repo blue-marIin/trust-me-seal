@@ -46,6 +46,7 @@ func main() {
 	outputBaseDir := flag.String("output", "output", "Output file path") // Base of output directory
 	caConfigPath := flag.String("ca-config", "ca-config.json", "CA config JSON file location")
 	exportCAPK := flag.Bool("export-ca-pk", false, "Export CA private key")
+	ipStr := flag.String("ip", "", "Print server's IP address")
 	// MAYBE: Add --dry-run flag for preview without writing output
 	// MAYBE: Add --valid-for flag to change validity period
 
@@ -85,7 +86,7 @@ func main() {
 	// TODO: Get DNS and IP to work - separate params, IP optional?
 	// Generate print server's cert signed by CA's cert and PK, with given DNS and optionally IP
 	// Valid for 1 year from time of generation
-	err = generateServerCertificate(*printerDns, *outputBaseDir, *passphrase, caCert, caKey)
+	err = generateServerCertificate(caCert, caKey, *ipStr, *outputBaseDir, *passphrase, *printerDns)
 	if err != nil {
 		log.Fatalf("Failed to generate server certificate and private key: %v", err)
 	}
@@ -139,7 +140,7 @@ func generateCACertificate(cfg CAConfig, passphrase string) (*x509.Certificate, 
 	return cert, priv, caPfxData, err
 }
 
-func generateServerCertificate(ipStr string, outputDir string, passphrase string, caCert *x509.Certificate, caKey *rsa.PrivateKey) error {
+func generateServerCertificate(caCert *x509.Certificate, caKey *rsa.PrivateKey, ipStr string, passphrase string, outputBaseDir string, printerDns string) error {
 	priv, err := rsa.GenerateKey(rand.Reader, 4096)
 	if err != nil {
 		return fmt.Errorf("failed to generate server private key: %w", err)
