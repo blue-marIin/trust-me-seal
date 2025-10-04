@@ -30,9 +30,9 @@ type CAConfig struct {
 }
 
 const caPK12Filename = "TRUSTED_ROOT.p12"
-const caPEMFilename = "openssl_root_certfile.pem"
+const caPEMFilename = "openssl_root_certfile.pem" // |
 const caPrivateKeyFilename = "root.key"
-const serverPK12Filename = "personal_certificate.p12"   // |
+const serverPK12Filename = "server_certificate.p12"
 const serverPEMFilename = "openssl_certfile.pem"        // |- Names are derived from C-Lodop naming
 const serverPrivateKeyFilename = "openssl_key_file.key" // |
 
@@ -71,18 +71,27 @@ func main() {
 	// TODO: Do not pass outputDir to generateCert functions - handle output writing in main
 	// 	^ Unsure of whether this is a good idea anymore
 	// TODO: Get DNS and IP to work - separate params, IP optional?
+	// Generate CA PFX from loaded config & passphrase
 	caCert, caKey, caPfxData, err := generateCACertificate(config, *passphrase)
 	if err != nil {
 		log.Fatalf("Failed to generate CA certificate and private key: %v", err)
 	}
 
+	// Write out CA's PK12, PEM and optionally PK files to respective output dirs
+	// P12, PK -> `./{output}`
+	// PEM -> `./{output}/clodop`
 	err = writeCAOutput(caCert, caKey, caPfxData, *outputBaseDir, *exportCAPK)
 	if err != nil {
 		log.Fatalf("Failed to write out CA files: %v", err)
 	}
 
+	// Generate print server's cert signed by CA's cert and PK, with given DNS and optionally IP
+	// Valid for 1 year from time of generation
 	generateServerCertificate(*printerDns, *outputBaseDir, *passphrase, caCert, caKey)
 
+	// Write out server's PK12, PEM and PK files to respective output dirs
+	// P12 -> `./{output}`
+	// PEM, PK -> `./{output}/clodop`
 	fmt.Println("Finished generating certificates - please check the output folder.")
 }
 
