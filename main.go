@@ -36,14 +36,14 @@ const serverPK12Filename = "personal_certificate.p12"   // |
 const serverPEMFilename = "openssl_certfile.pem"        // |- Names are derived from C-Lodop naming
 const serverPrivateKeyFilename = "openssl_key_file.key" // |
 
-const serverOutputDir = "clodop" // May change this to a more generic name
+const serverOutputDir = "clodop" // Subdir of output directory, default './output' - May change this to a more generic name
 
 func main() {
 	var err error
 
 	printerDns := flag.String("dns", "", "Print server's hostname")
 	passphrase := flag.String("passphrase", "", "Passphrase to encrypt PKCS#12 files")
-	outputDir := flag.String("output", "output", "Output file path")
+	outputDir := flag.String("output", "output", "Output file path") // Root of output directory
 	caConfigPath := flag.String("ca-config", "ca-config.json", "CA config JSON file location")
 	exportCAPK := flag.Bool("export-ca-pk", false, "Export CA private key")
 	// MAYBE: Add --dry-run flag for preview without writing output
