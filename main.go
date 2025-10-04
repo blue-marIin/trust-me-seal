@@ -51,15 +51,18 @@ func main() {
 
 	flag.Parse()
 
+	// Check DNS and passphrase flags passed - minimum required to run
 	if *printerDns == "" || *passphrase == "" {
 		log.Fatalf("You must provide the DNS of the print server PC and a passphrase.\neg: ./trust-me-seal-cli.exe --dns printserver.local --passphrase changeit")
 	}
 
+	// Try make `./{output}/clodop` directory & subdirectory for writing output files
 	err = os.MkdirAll(filepath.Join(*outputBaseDir, serverOutputDir), os.ModePerm)
 	if err != nil {
 		log.Fatalf("Failed to create output directory: %v", err)
 	}
 
+	// Try load & parse CA JSON config from `./{ca-config.json}`
 	config, err := loadConfig(*caConfigPath)
 	if err != nil {
 		log.Fatalf("Failed to load CA config JSON file: %v", err)
@@ -72,7 +75,11 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to generate CA certificate and private key: %v", err)
 	}
-	writeCAOutput(*outputBaseDir, caPfxData, *exportCAPK)
+
+	err = writeCAOutput(caCert, caKey, caPfxData, *outputBaseDir, *exportCAPK)
+	if err != nil {
+		log.Fatalf("Failed to write out CA files: %v", err)
+	}
 
 	generateServerCertificate(*printerDns, *outputBaseDir, *passphrase, caCert, caKey)
 
@@ -183,10 +190,10 @@ func bigInt() *big.Int {
 	return n
 }
 
-func writeCAOutput(outputPath string, pfxData []byte, exportKey bool) error {
+func writeCAOutput(cert *x509.Certificate, priv *rsa.PrivateKey, pfxData []byte, outputPath string, exportKey bool) error {
 	var err error
 
-	err = os.WriteFile(outputPath, pfxData, 0600)
+	err = os.WriteFile(filepath.Join(outputPath, caPK12Filename), pfxData, 0600)
 	if err != nil {
 		log.Fatalf("Failed to write CA PKCS12 file: %v", err)
 	}
