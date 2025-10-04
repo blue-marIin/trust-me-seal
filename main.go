@@ -68,9 +68,6 @@ func main() {
 		log.Fatalf("Failed to load CA config JSON file: %v", err)
 	}
 
-	// TODO: Do not pass outputDir to generateCert functions - handle output writing in main
-	// 	^ Unsure of whether this is a good idea anymore
-	// TODO: Get DNS and IP to work - separate params, IP optional?
 	// Generate CA PFX from loaded config & passphrase
 	caCert, caKey, caPfxData, err := generateCACertificate(config, *passphrase)
 	if err != nil {
@@ -85,9 +82,13 @@ func main() {
 		log.Fatalf("Failed to write out CA files: %v", err)
 	}
 
+	// TODO: Get DNS and IP to work - separate params, IP optional?
 	// Generate print server's cert signed by CA's cert and PK, with given DNS and optionally IP
 	// Valid for 1 year from time of generation
-	generateServerCertificate(*printerDns, *outputBaseDir, *passphrase, caCert, caKey)
+	err = generateServerCertificate(*printerDns, *outputBaseDir, *passphrase, caCert, caKey)
+	if err != nil {
+		log.Fatalf("Failed to generate server certificate and private key: %v", err)
+	}
 
 	// Write out server's PK12, PEM and PK files to respective output dirs
 	// P12 -> `./{output}`
