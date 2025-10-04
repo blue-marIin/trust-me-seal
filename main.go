@@ -94,6 +94,11 @@ func main() {
 	// Write out server's PK12, PEM and PK files to respective output dirs
 	// P12 -> `./{output}`
 	// PEM, PK -> `./{output}/clodop`
+	err = writeServerOutput()
+	if err != nil {
+		log.Fatalf("Failed to write out server files: %v", err)
+	}
+
 	fmt.Println("Finished generating certificates - please check the output folder.")
 }
 
@@ -103,11 +108,11 @@ func loadConfig(caConfigPath string) (CAConfig, error) {
 
 	configData, err := os.ReadFile(caConfigPath)
 	if err != nil {
-		log.Fatalf("Failed to load CA config file: %v", err)
+		return config, fmt.Errorf("failed to load CA config file: %w", err)
 	}
 
 	if err := json.Unmarshal(configData, &config); err != nil {
-		log.Fatalf("Failed to parse CA config JSON: %v", err)
+		return config, fmt.Errorf("failed to parse CA config JSON: %w", err)
 	}
 
 	return config, err
@@ -129,12 +134,19 @@ func generateCACertificate(cfg CAConfig, passphrase string) (*x509.Certificate, 
 		IsCA:                  true,
 	}
 
-	certDER, _ := x509.CreateCertificate(rand.Reader, &template, &template, &priv.PublicKey, priv)
-	cert, _ := x509.ParseCertificate(certDER)
+	certDER, err := x509.CreateCertificate(rand.Reader, &template, &template, &priv.PublicKey, priv)
+	if err != nil {
+		return nil, nil, nil, fmt.Errorf("failed to create CA certificate from template: %v", err)
+	}
+
+	cert, err := x509.ParseCertificate(certDER)
+	if err != nil {
+		return nil, nil, nil, fmt.Errorf("failed to parse CA certificate from DER: %v", err)
+	}
 
 	caPfxData, err := pkcs12.Modern.Encode(priv, cert, nil, passphrase)
 	if err != nil {
-		log.Fatalf("Failed to encode PKCS12 data: %v", err)
+		return nil, nil, nil, fmt.Errorf("failed to encode PKCS12 data: %v", err)
 	}
 
 	return cert, priv, caPfxData, err
@@ -146,38 +158,47 @@ func generateServerCertificate(caCert *x509.Certificate, caKey *rsa.PrivateKey, 
 		return fmt.Errorf("failed to generate server private key: %w", err)
 	}
 
-	ip := net.ParseIP(ipStr)
-	if ip == nil {
-		log.Fatalf("Invalid IP address: %s\n", ipStr)
+	var ipAddresses []net.IP
+	if ipStr != "" {
+		ip := net.ParseIP(ipStr)
+		if ip == nil {
+			return fmt.Errorf("invalid IP address: %s", ipStr)
+		}
+		ipAddresses = append(ipAddresses, ip)
 	}
 
 	template := x509.Certificate{
 		SerialNumber: bigInt(),
 		Subject: pkix.Name{
-			CommonName: ipStr, // deprecated
+			CommonName: printerDns,
 		},
 		NotBefore:   time.Now(),
 		NotAfter:    time.Now().Add(365 * 24 * time.Hour),
-		IPAddresses: []net.IP{ip},
+		DNSNames:    []string{printerDns},
+		IPAddresses: ipAddresses,
 		KeyUsage:    x509.KeyUsageDigitalSignature | x509.KeyUsageKeyEncipherment,
 		ExtKeyUsage: []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
 	}
 
-	var certDER []byte
-	if caCert != nil && caKey != nil {
-		certDER, _ = x509.CreateCertificate(rand.Reader, &template, caCert, &priv.PublicKey, caKey)
+	// Create server certificate & sign with CA
+	certDER, err := x509.CreateCertificate(rand.Reader, &template, caCert, &priv.PublicKey, caKey)
+	if err != nil {
+		return fmt.Errorf("failed to create server certificate: %w", err)
 	}
 
-	cert, _ := x509.ParseCertificate(certDER)
-
+	cert, err := x509.ParseCertificate(certDER)
+	if err != nil {
+		return fmt.Errorf("failed to parse server certificate: %w", err)
+	}
+	// This will be broken out into writeServerOutput fun
 	pfxData, _ := pkcs12.Modern.Encode(priv, cert, nil, passphrase)
-	os.WriteFile(outputDir+serverPK12Filename, pfxData, 0600)
+	os.WriteFile(outputBaseDir+serverPK12Filename, pfxData, 0600)
 
-	certOut, _ := os.Create(outputDir + serverPEMFilename)
+	certOut, _ := os.Create(outputBaseDir + serverPEMFilename)
 	pem.Encode(certOut, &pem.Block{Type: "CERTIFICATE", Bytes: cert.Raw})
 	certOut.Close()
 
-	keyOut, _ := os.Create(outputDir + serverPrivateKeyFilename)
+	keyOut, _ := os.Create(outputBaseDir + serverPrivateKeyFilename)
 	pem.Encode(keyOut, &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(priv)})
 	keyOut.Close()
 
@@ -219,4 +240,10 @@ func writeCAOutput(cert *x509.Certificate, priv *rsa.PrivateKey, pfxData []byte,
 	}
 
 	return nil
+}
+
+func writeServerOutput() error {
+	var err error
+
+	return err
 }
