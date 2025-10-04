@@ -134,18 +134,6 @@ func generateCACertificate(cfg CAConfig, passphrase string) (*x509.Certificate, 
 	if err != nil {
 		log.Fatalf("Failed to encode PKCS12 data: %v", err)
 	}
-	//os.WriteFile(outputDir+"/TRUSTED_ROOT.p12", pfxData, 0600)
-
-	//certOut, _ := os.Create(outputDir + "/openssl_root_certfile.pem")
-	//pem.Encode(certOut, &pem.Block{Type: "CERTIFICATE", Bytes: cert.Raw})
-	//certOut.Close()
-
-	// Not outputting CA's private key by default - intended ephemeral/single-use CA cert
-	// if exportRootPK {
-	// 	keyOut, _ := os.Create(outputDir + "/ca_key.pem")
-	// 	pem.Encode(keyOut, &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(priv)})
-	// 	keyOut.Close()
-	// }
 
 	return cert, priv, caPfxData, err
 }
@@ -202,18 +190,23 @@ func bigInt() *big.Int {
 func writeCAOutput(cert *x509.Certificate, priv *rsa.PrivateKey, pfxData []byte, outputPath string, exportKey bool) error {
 	var err error
 
+	// Write CA PK12 file to base output dir `./{output}`
 	err = os.WriteFile(filepath.Join(outputPath, caPK12Filename), pfxData, 0600)
 	if err != nil {
 		log.Fatalf("Failed to write CA PKCS12 file: %v", err)
 	}
 
-	certOut, err := os.Create(filepath.Join(outputPath, caPEMFilename))
+	// Create PEM file in output subdir `./{output}/clodop`
+	certOut, err := os.Create(filepath.Join(outputPath, serverOutputDir, caPEMFilename))
 	if err != nil {
 		return fmt.Errorf("failed to create CA PEM file: %w", err)
 	}
 	defer certOut.Close()
+
+	// Write PEM encoded cert to .pem file
 	pem.Encode(certOut, &pem.Block{Type: "CERTIFICATE", Bytes: cert.Raw})
 
+	// If exporting CA's private key enabled, create file and write
 	if exportKey {
 		keyOut, err := os.Create(filepath.Join(outputPath, caPrivateKeyFilename))
 		if err != nil {
