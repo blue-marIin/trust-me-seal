@@ -43,7 +43,7 @@ func main() {
 
 	printerDns := flag.String("dns", "", "Print server's hostname")
 	passphrase := flag.String("passphrase", "", "Passphrase to encrypt PKCS#12 files")
-	outputDir := flag.String("output", "output", "Output file path") // Root of output directory
+	outputBaseDir := flag.String("output", "output", "Output file path") // Base of output directory
 	caConfigPath := flag.String("ca-config", "ca-config.json", "CA config JSON file location")
 	exportCAPK := flag.Bool("export-ca-pk", false, "Export CA private key")
 	// MAYBE: Add --dry-run flag for preview without writing output
@@ -55,10 +55,9 @@ func main() {
 		log.Fatalf("You must provide the DNS of the print server PC and a passphrase.\neg: ./trust-me-seal-cli.exe --dns printserver.local --passphrase changeit")
 	}
 
-	var fullOutputPath = filepath.Join(*outputDir, serverOutputDir)
-	err = os.MkdirAll(fullOutputPath, os.ModePerm)
+	err = os.MkdirAll(filepath.Join(*outputBaseDir, serverOutputDir), os.ModePerm)
 	if err != nil {
-		log.Fatalf("Failed to create directory: %v", err)
+		log.Fatalf("Failed to create output directory: %v", err)
 	}
 
 	config, err := loadConfig(*caConfigPath)
@@ -73,9 +72,9 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to generate CA certificate and private key: %v", err)
 	}
-	writeCAOutput(fullOutputPath, caPfxData, *exportCAPK)
+	writeCAOutput(*outputBaseDir, caPfxData, *exportCAPK)
 
-	generateServerCertificate(*printerDns, *outputDir, *passphrase, caCert, caKey)
+	generateServerCertificate(*printerDns, *outputBaseDir, *passphrase, caCert, caKey)
 
 	fmt.Println("Finished generating certificates - please check the output folder.")
 }
